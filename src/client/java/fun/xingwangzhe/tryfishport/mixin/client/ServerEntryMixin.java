@@ -2,6 +2,7 @@ package fun.xingwangzhe.tryfishport.mixin.client;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerServerListWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -40,7 +41,14 @@ public class ServerEntryMixin {
             if (button == null) {
                 button = ButtonWidget.builder(Text.of("Ping"), btn -> {
                     System.out.println("Ping button clicked!"); // 添加日志
-                    MinecraftClient.getInstance().setScreen(new PingUI(entry.getServer()));
+                    // 获取当前屏幕并确保它是MultiplayerScreen
+                    Screen currentScreen = MinecraftClient.getInstance().currentScreen;
+                    if (currentScreen instanceof MultiplayerScreen) {
+                        MinecraftClient.getInstance().setScreen(new PingUI((MultiplayerScreen) currentScreen, entry.getServer()));
+                    } else {
+                        // 如果由于某种原因当前屏幕不是MultiplayerScreen，则创建一个新的
+                        MinecraftClient.getInstance().setScreen(new PingUI(new MultiplayerScreen(null), entry.getServer()));
+                    }
                 }).dimensions(0, 0, 60, 20).build();
                 entryButtons.put(entry, button);
             }

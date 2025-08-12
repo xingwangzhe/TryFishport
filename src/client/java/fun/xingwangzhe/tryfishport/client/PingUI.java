@@ -2,6 +2,7 @@ package fun.xingwangzhe.tryfishport.client;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 import net.minecraft.client.MinecraftClient;
@@ -12,18 +13,18 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PingUI extends Screen {
     private final ServerInfo serverInfo;
+    private final MultiplayerScreen parent; // 添加父级屏幕引用
     private volatile String pingResult = "正在获取路由信息...";
     private final AtomicBoolean isPinging = new AtomicBoolean(false);
     private final StringBuilder traceOutputBuffer = new StringBuilder();
 
-    public PingUI(ServerInfo serverInfo) {
+    public PingUI(MultiplayerScreen parent, ServerInfo serverInfo) {
         super(Text.of("服务器路由追踪"));
+        this.parent = parent;
         this.serverInfo = serverInfo;
         System.out.println("PingUI initialized with serverInfo: " + serverInfo.name);
         System.out.println("ServerInfo details - Name: " + serverInfo.name + ", Address: " + serverInfo.address + ", Version: " + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
@@ -51,10 +52,33 @@ public class PingUI extends Screen {
         .dimensions(this.width / 2 + 5, this.height - 30, 100, 20)
         .build());
 
+        // 添加关闭按钮
+        this.addDrawableChild(ButtonWidget.builder(Text.of("关闭"), button -> {
+            close();
+        })
+        .dimensions(this.width / 2 - 50, this.height - 60, 100, 20)
+        .build());
+
         // 初始traceroute
         traceRoute();
     }
 
+    @Override
+    public boolean shouldPause() {
+        return false; // 不暂停游戏
+    }
+    
+    @Override
+    public void close() {
+        // 关闭时直接返回到服务器列表页面
+        MinecraftClient.getInstance().setScreen(parent);
+    }
+    
+    @Override
+    public void resize(MinecraftClient client, int width, int height) {
+        super.resize(client, width, height);
+    }
+    
     private void traceRoute() {
         if (isPinging.get()) {
             System.out.println("Already tracing route, ignoring request.");
@@ -270,15 +294,5 @@ public class PingUI extends Screen {
         
         // 添加调试信息
 //        System.out.println("Render method called");
-    }
-    
-    @Override
-    public boolean shouldPause() {
-        return false; // 不暂停游戏
-    }
-    
-    @Override
-    public void resize(MinecraftClient client, int width, int height) {
-        super.resize(client, width, height);
     }
 }
