@@ -17,6 +17,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.Inet6Address;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 
 public class TryFishportUI extends Screen {
     private Screen parent;
@@ -27,6 +31,7 @@ public class TryFishportUI extends Screen {
     private String resultMessage = "";
     private boolean isChecking = false;
     private boolean isBanned = false;
+    private boolean isIPv6 = false;
 
     public TryFishportUI(Screen parent) {
         super(Text.translatable("tryfishport.ui.unban.title"));
@@ -65,6 +70,11 @@ public class TryFishportUI extends Screen {
         
         // 绘制IP地址信息
         context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.ip").getString() + ipAddress, 10, 50, 0xFFFFFF);
+        
+        // 绘制IPv6提示信息
+        if (isIPv6) {
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.unban.ipv6.warning").getString(), 10, 65, 0xFFFF00);
+        }
         
         // 绘制状态信息
         context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.status").getString() + status, 10, 70, 0xFFFFFF);
@@ -120,6 +130,9 @@ public class TryFishportUI extends Screen {
                     ipAddress = localhost.getHostAddress();
                     status = Text.translatable("tryfishport.ui.unban.ip.local").getString();
                 }
+                
+                // 检查是否为IPv6地址
+                isIPv6 = ipAddress.contains(":") && !ipAddress.contains(".");
                 
             } catch (Exception e) {
                 ipAddress = Text.translatable("tryfishport.ui.unban.ip.failed").getString();
@@ -186,7 +199,18 @@ public class TryFishportUI extends Screen {
             return false;
         }
         
-        // 简单验证IPv4地址格式
+        // 检查是否为IPv6地址
+        if (ip.contains(":")) {
+            // 简单的IPv6地址验证
+            try {
+                Inet6Address.getByName(ip);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        
+        // 验证IPv4地址格式
         String[] parts = ip.split("\\.");
         if (parts.length != 4) {
             return false;
@@ -208,6 +232,13 @@ public class TryFishportUI extends Screen {
 
     private void checkBanStatus() {
         if (isChecking) {
+            return;
+        }
+        
+        // 如果是IPv6地址，不允许检查状态
+        if (isIPv6) {
+            resultMessage = "tryfishport.ui.unban.result.ipv6_not_supported";
+            refreshUI();
             return;
         }
         
@@ -262,6 +293,13 @@ public class TryFishportUI extends Screen {
     }
 
     private void calculateCaptcha() {
+        // 如果是IPv6地址，不计算验证码
+        if (isIPv6) {
+            resultMessage = "tryfishport.ui.unban.result.ipv6_not_supported";
+            refreshUI();
+            return;
+        }
+        
         CompletableFuture.runAsync(() -> {
             try {
                 // 获取验证码计算参数 使用URI方式创建URL对象，避免使用已过时的URL构造函数
@@ -310,6 +348,13 @@ public class TryFishportUI extends Screen {
     }
 
     private void submitUnbanRequest() {
+        // 如果是IPv6地址，不允许提交解封请求
+        if (isIPv6) {
+            resultMessage = "tryfishport.ui.unban.result.ipv6_not_supported";
+            refreshUI();
+            return;
+        }
+        
         if (captcha.isEmpty() || !isBanned) {
             resultMessage = "tryfishport.ui.unban.result.captcha_failed";
             refreshUI();
@@ -376,7 +421,7 @@ public class TryFishportUI extends Screen {
             if (element instanceof ButtonWidget) {
                 ButtonWidget button = (ButtonWidget) element;
                 if (button.getMessage().getString().equals(Text.translatable("tryfishport.ui.unban.button.submit_unban").getString())) {
-                    button.active = isBanned && !captcha.isEmpty() && !Text.translatable("tryfishport.ui.unban.result.captcha_invalid").getString().equals(Text.translatable(resultMessage).getString());
+                    button.active = isBanned && !captcha.isEmpty() && !Text.translatable("tryfishport.ui.unban.result.captcha_invalid").getString().equals(Text.translatable(resultMessage).getString()) && !isIPv6;
                 }
             }
         });

@@ -55,6 +55,8 @@
   "tryfishport.ui.unban.result.get_ip_failed": "获取IP地址失败",
   "tryfishport.ui.unban.result.unban_failed_code": "解封请求失败: HTTP ",
   "tryfishport.ui.unban.result.unban_failed": "解封请求失败: ",
+  "tryfishport.ui.unban.result.ipv6_not_supported": "检测到您使用IPv6访问，请切换为IPv4访问以使用自助功能",
+  "tryfishport.ui.unban.ipv6.warning": "注意：您正在使用IPv6地址，解封功能仅支持IPv4",
   
   "tryfishport.ui.general.ip": "您的 IP: ",
   "tryfishport.ui.general.status": "状态: ",
