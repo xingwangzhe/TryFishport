@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "tryfishport",
+  "version": "${version}",
+  "name": "TryFishport",
+  "description": "a mod like webdisplay",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/tryfishport/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "fun.xingwangzhe.tryfishport.client.TryfishportDataGenerator"
+    ],
+    "client": [
+      "fun.xingwangzhe.tryfishport.client.TryfishportClient"
+    ],
+    "main": [
+      "fun.xingwangzhe.tryfishport.Tryfishport"
+    ]
+  },
+  "mixins": [
+    "tryfishport.mixins.json",
+    {
+      "config": "tryfishport.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
