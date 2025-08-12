@@ -9,6 +9,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import fun.xingwangzhe.tryfishport.client.TryFishportUI;
+
 @Mixin(MultiplayerScreen.class)
 public class MultiplayerScreenMixin extends Screen {
     protected MultiplayerScreenMixin(Text title) {
@@ -21,6 +23,8 @@ public class MultiplayerScreenMixin extends Screen {
         this.addDrawableChild(ButtonWidget
             .builder(Text.literal("TryFishport"), button -> {
                 System.out.println("TryFishport button clicked!");
+                // 打开TryFishportUI界面
+                net.minecraft.client.MinecraftClient.getInstance().setScreen(new TryFishportUI(this));
             })
             .dimensions(this.width - 105, 5, 100, 20)
             .build());
