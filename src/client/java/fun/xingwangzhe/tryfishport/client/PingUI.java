@@ -8,6 +8,7 @@ import net.minecraft.text.Text;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.network.ServerAddress;
+import net.minecraft.util.Identifier;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -18,42 +19,42 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PingUI extends Screen {
     private final ServerInfo serverInfo;
     private final MultiplayerScreen parent; // 添加父级屏幕引用
-    private volatile String pingResult = "正在获取路由信息...";
+    private volatile String pingResult = Text.translatable("tryfishport.ui.ping.status.getting_route_info").getString();
     private final AtomicBoolean isPinging = new AtomicBoolean(false);
     private final StringBuilder traceOutputBuffer = new StringBuilder();
 
     public PingUI(MultiplayerScreen parent, ServerInfo serverInfo) {
-        super(Text.of("服务器路由追踪"));
+        super(Text.translatable("tryfishport.ui.ping.title"));
         this.parent = parent;
         this.serverInfo = serverInfo;
-        System.out.println("PingUI initialized with serverInfo: " + serverInfo.name);
-        System.out.println("ServerInfo details - Name: " + serverInfo.name + ", Address: " + serverInfo.address + ", Version: " + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
+        System.out.println(Text.translatable("tryfishport.log.pingui.init").getString() + serverInfo.name);
+        System.out.println(Text.translatable("tryfishport.log.serverinfo.details").getString() + serverInfo.name + Text.translatable("tryfishport.log.serverinfo.address").getString() + serverInfo.address + Text.translatable("tryfishport.log.serverinfo.version").getString() + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
     }
 
     @Override
     protected void init() {
-        System.out.println("Initializing PingUI with serverInfo: " + serverInfo.name);
-        System.out.println("ServerInfo details - Name: " + serverInfo.name + ", Address: " + serverInfo.address + ", Version: " + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
+        System.out.println(Text.translatable("tryfishport.log.pingui.init").getString() + serverInfo.name);
+        System.out.println(Text.translatable("tryfishport.log.serverinfo.details").getString() + serverInfo.name + Text.translatable("tryfishport.log.serverinfo.address").getString() + serverInfo.address + Text.translatable("tryfishport.log.serverinfo.version").getString() + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
         
         // 添加重试按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.of("重试"), button -> {
-            System.out.println("Retry button clicked for server: " + serverInfo.name);
-            System.out.println("ServerInfo details on retry - Name: " + serverInfo.name + ", Address: " + serverInfo.address + ", Version: " + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("tryfishport.ui.ping.button.retry"), button -> {
+            System.out.println(Text.translatable("tryfishport.log.button.retry").getString() + serverInfo.name);
+            System.out.println(Text.translatable("tryfishport.log.serverinfo.details").getString() + serverInfo.name + Text.translatable("tryfishport.log.serverinfo.address").getString() + serverInfo.address + Text.translatable("tryfishport.log.serverinfo.version").getString() + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
             traceRoute();
         })
         .dimensions(this.width / 2 - 105, this.height - 30, 100, 20)
         .build());
 
-        this.addDrawableChild(ButtonWidget.builder(Text.of("复制结果"), button -> {
-            System.out.println("Copy result button clicked for server: " + serverInfo.name);
-            System.out.println("Copying result: " + pingResult);
-            MinecraftClient.getInstance().keyboard.setClipboard(pingResult);
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("tryfishport.ui.ping.button.copy_result"), button -> {
+            System.out.println(Text.translatable("tryfishport.log.button.copy").getString() + serverInfo.name);
+            System.out.println(Text.translatable("tryfishport.log.copying.result").getString() + Text.translatable(pingResult).getString());
+            MinecraftClient.getInstance().keyboard.setClipboard(Text.translatable(pingResult).getString());
         })
         .dimensions(this.width / 2 + 5, this.height - 30, 100, 20)
         .build());
 
         // 添加关闭按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.of("关闭"), button -> {
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("tryfishport.ui.ping.button.close"), button -> {
             close();
         })
         .dimensions(this.width / 2 - 50, this.height - 60, 100, 20)
@@ -81,39 +82,39 @@ public class PingUI extends Screen {
     
     private void traceRoute() {
         if (isPinging.get()) {
-            System.out.println("Already tracing route, ignoring request.");
+            System.out.println(Text.translatable("tryfishport.log.tracing.ignored").getString());
             return;
         }
         
         isPinging.set(true);
-        pingResult = "正在获取路由信息...";
-        System.out.println("Starting to trace route: " + serverInfo.address);
-        System.out.println("ServerInfo details - Name: " + serverInfo.name + ", Address: " + serverInfo.address + ", Version: " + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
+        pingResult = "tryfishport.ui.ping.status.getting_route_info";
+        System.out.println(Text.translatable("tryfishport.log.tracing.start").getString() + serverInfo.address);
+        System.out.println(Text.translatable("tryfishport.log.serverinfo.details").getString() + serverInfo.name + Text.translatable("tryfishport.log.serverinfo.address").getString() + serverInfo.address + Text.translatable("tryfishport.log.serverinfo.version").getString() + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
     
         traceOutputBuffer.setLength(0); // 清空缓冲区
-        traceOutputBuffer.append("正在获取路由信息...\n");
+        traceOutputBuffer.append("tryfishport.ui.ping.status.getting_route_info\n");
         updatePingResult();
-        System.out.println("Parsing server address: " + serverInfo.address);
+        System.out.println(Text.translatable("tryfishport.log.parsing.address").getString() + serverInfo.address);
         
         ServerAddress address = ServerAddress.parse(serverInfo.address);
         String host = address.getAddress();
         
-        System.out.println("Parsed address - Host: " + host);
+        System.out.println(Text.translatable("tryfishport.log.parsed.host").getString() + host);
         
         // 执行traceroute命令
-        System.out.println("Starting traceroute command execution");
+        System.out.println(Text.translatable("tryfishport.log.traceroute.start").getString());
         new Thread(() -> {
             try {
                 executeTraceRouteCommand(host);
             } catch (Exception e) {
-                System.out.println("Exception in traceRoute: " + e.getMessage());
+                System.out.println(Text.translatable("tryfishport.log.exception.traceroute").getString() + e.getMessage());
                 e.printStackTrace();
-                traceOutputBuffer.append("路由追踪错误: ").append(e.getMessage()).append("\n");
+                traceOutputBuffer.append("tryfishport.ui.ping.error.route_trace").append(e.getMessage()).append("\n");
                 updatePingResult();
             } finally {
                 isPinging.set(false);
-                System.out.println("Finished tracing route: " + serverInfo.address);
-                System.out.println("ServerInfo details - Name: " + serverInfo.name + ", Address: " + serverInfo.address + ", Version: " + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
+                System.out.println(Text.translatable("tryfishport.log.traceroute.finish").getString() + serverInfo.address);
+                System.out.println(Text.translatable("tryfishport.log.serverinfo.details").getString() + serverInfo.name + Text.translatable("tryfishport.log.serverinfo.address").getString() + serverInfo.address + Text.translatable("tryfishport.log.serverinfo.version").getString() + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
             }
         }).start();
     }
@@ -189,13 +190,13 @@ public class PingUI extends Screen {
                         errorStr.contains("command not found")) {
                         traceOutputBuffer.append(getCommandNotFoundMessage(friendlyName, os));
                     } else {
-                        traceOutputBuffer.append("\n错误信息:\n").append(errorOutput.toString());
+                        traceOutputBuffer.append("\n").append(Text.translatable("tryfishport.ui.ping.system.error_info").getString()).append(errorOutput.toString());
                     }
                 }
                 
                 // 如果输出为空但退出码为0，可能是命令执行了但没有输出
                 if (traceOutputBuffer.length() == 0 && exitCode == 0) {
-                    traceOutputBuffer.append("路由追踪命令执行完成，但未返回任何输出");
+                    traceOutputBuffer.append(Text.translatable("tryfishport.ui.ping.system.command.no_output").getString());
                 }
                 
                 updatePingResult(); // 最终更新结果
@@ -208,15 +209,15 @@ public class PingUI extends Screen {
                     e.getMessage().contains("No such file or directory")) {
                     traceOutputBuffer.append(getCommandNotFoundMessage(friendlyName, os));
                 } else {
-                    traceOutputBuffer.append("执行路由追踪命令时出错: ").append(e.getMessage());
+                    traceOutputBuffer.append(Text.translatable("tryfishport.ui.ping.system.command.error").getString()).append(e.getMessage());
                 }
                 updatePingResult();
                 throw e; // 重新抛出其他IO异常
             }
         } catch (Exception e) {
-            System.out.println("Exception in executeTraceRouteCommand: " + e.getMessage());
+            System.out.println(Text.translatable("tryfishport.log.exception.traceroute").getString() + e.getMessage());
             e.printStackTrace();
-            traceOutputBuffer.append("执行路由追踪命令时出错: ").append(e.getMessage()).append("\n");
+            traceOutputBuffer.append(Text.translatable("tryfishport.ui.ping.system.command.error").getString()).append(e.getMessage()).append("\n");
             updatePingResult();
         }
     }
@@ -241,30 +242,30 @@ public class PingUI extends Screen {
      */
     private String getCommandNotFoundMessage(String command, String os) {
         StringBuilder message = new StringBuilder();
-        message.append("未找到路由追踪命令: ").append(command).append("\n\n");
+        message.append(Text.translatable("tryfishport.ui.ping.error.command_not_found").getString()).append(command).append("\n\n");
         
         if (os.contains("win")) {
-            message.append("Windows系统说明:\n");
-            message.append("- tracert命令应该是Windows系统自带的\n");
-            message.append("- 请确认您在命令提示符中可以执行tracert命令\n");
-            message.append("- 如果仍然无法使用，请检查系统环境变量设置\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.windows.info").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.windows.line1").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.windows.line2").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.windows.line3").getString()).append("\n");
         } else if (os.contains("mac") || os.contains("darwin")) {
-            message.append("Mac系统说明:\n");
-            message.append("- traceroute命令应该是macOS系统自带的\n");
-            message.append("- 请确认您在终端中可以执行traceroute命令\n");
-            message.append("- 如果仍然无法使用，请检查系统完整性或重新安装系统\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.mac.info").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.mac.line1").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.mac.line2").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.mac.line3").getString()).append("\n");
         } else {
-            message.append("Linux系统说明:\n");
-            message.append("- 某些Linux发行版可能未预装traceroute工具\n");
-            message.append("- Ubuntu/Debian系统可执行以下命令安装:\n");
-            message.append("  sudo apt-get update && sudo apt-get install traceroute\n");
-            message.append("- CentOS/RHEL/Fedora系统可执行以下命令安装:\n");
-            message.append("  sudo yum install traceroute\n");
-            message.append("  或\n");
-            message.append("  sudo dnf install traceroute\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.linux.info").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.linux.line1").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.linux.line2").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.linux.line3").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.linux.line4").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.linux.line5").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.linux.line6").getString()).append("\n");
+            message.append(Text.translatable("tryfishport.ui.ping.system.linux.line7").getString()).append("\n");
         }
         
-        message.append("\n提示: 您也可以手动在系统终端中执行以下命令来查看路由信息:\n");
+        message.append(Text.translatable("tryfishport.ui.ping.system.tip").getString());
         if (os.contains("win")) {
             message.append("  tracert ").append(ServerAddress.parse(serverInfo.address).getAddress());
         } else {
@@ -283,11 +284,11 @@ public class PingUI extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 15, 0xFFFFFF);
         
         // 绘制服务器信息在左上角区域
-        context.drawTextWithShadow(this.textRenderer, "服务器名称: " + serverInfo.name, 10, 35, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, "服务器地址: " + serverInfo.address, 10, 50, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.ip").getString() + serverInfo.name, 10, 35, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.status").getString() + serverInfo.address, 10, 50, 0xFFFFFF);
         
         // 绘制结果信息 - 支持多行显示
-        String[] lines = pingResult.split("\n");
+        String[] lines = Text.translatable(pingResult).toString().split("\n");
         for (int i = 0; i < lines.length && i < 20; i++) { // 限制显示20行
             context.drawTextWithShadow(this.textRenderer, lines[i], 10, 70 + i * 10, 0xFFFFFF);
         }

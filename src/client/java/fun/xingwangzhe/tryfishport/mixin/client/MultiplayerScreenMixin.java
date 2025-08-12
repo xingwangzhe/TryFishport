@@ -21,8 +21,8 @@ public class MultiplayerScreenMixin extends Screen {
     private void onInit(CallbackInfo ci) {
         // 在服务器列表界面右上角附近添加自定义按钮
         this.addDrawableChild(ButtonWidget
-            .builder(Text.literal("TryFishport"), button -> {
-                System.out.println("TryFishport button clicked!");
+            .builder(Text.translatable("tryfishport.button.tryfishport"), button -> {
+                System.out.println(Text.translatable("tryfishport.log.button.tryfishport.clicked").getString());
                 // 打开TryFishportUI界面
                 net.minecraft.client.MinecraftClient.getInstance().setScreen(new TryFishportUI(this));
             })

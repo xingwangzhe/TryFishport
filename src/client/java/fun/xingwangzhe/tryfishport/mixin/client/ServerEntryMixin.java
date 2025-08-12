@@ -39,8 +39,8 @@ public class ServerEntryMixin {
             // 获取或创建按钮
             ButtonWidget button = entryButtons.get(entry);
             if (button == null) {
-                button = ButtonWidget.builder(Text.of("Ping"), btn -> {
-                    System.out.println("Ping button clicked!"); // 添加日志
+                button = ButtonWidget.builder(Text.translatable("tryfishport.button.ping"), btn -> {
+                    System.out.println("tryfishport.log.button.ping"); // 添加日志
                     // 获取当前屏幕并确保它是MultiplayerScreen
                     Screen currentScreen = MinecraftClient.getInstance().currentScreen;
                     if (currentScreen instanceof MultiplayerScreen) {
@@ -84,6 +84,6 @@ public class ServerEntryMixin {
     // 替换 printStackTrace 为更可靠的日志记录
     @Unique
     private void logException(Exception e) {
-        LOGGER.error("Exception occurred while rendering TryFishport button", e);
+        LOGGER.error(Text.translatable("tryfishport.log.exception.button").getString(), e);
     }
 }

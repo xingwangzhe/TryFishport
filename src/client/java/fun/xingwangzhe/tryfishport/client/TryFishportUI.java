@@ -20,32 +20,33 @@ import java.net.UnknownHostException;
 
 public class TryFishportUI extends Screen {
     private Screen parent;
-    private String ipAddress = "获取中...";
-    private String status = "检测中...";
+    private String ipAddress = Text.translatable("tryfishport.ui.unban.ip.getting").getString();
+    private String status = Text.translatable("tryfishport.ui.unban.status.checking").getString();
     private String captcha = "";
+    // 保存翻译键而不是实际文本
     private String resultMessage = "";
     private boolean isChecking = false;
     private boolean isBanned = false;
 
     public TryFishportUI(Screen parent) {
-        super(Text.of("FishPort IP自助解封"));
+        super(Text.translatable("tryfishport.ui.unban.title"));
         this.parent = parent;
     }
 
     @Override
     protected void init() {
         // 添加关闭按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.of("关闭"), button -> {
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("tryfishport.ui.unban.button.close"), button -> {
             close();
         }).dimensions(this.width / 2 - 50, this.height - 30, 100, 20).build());
 
         // 添加检查按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.of("检查状态"), button -> {
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("tryfishport.ui.unban.button.check_status"), button -> {
             checkBanStatus();
         }).dimensions(this.width / 2 - 105, this.height - 60, 100, 20).build());
 
         // 添加解封按钮（初始禁用）
-        ButtonWidget unbanButton = ButtonWidget.builder(Text.of("提交解封"), button -> {
+        ButtonWidget unbanButton = ButtonWidget.builder(Text.translatable("tryfishport.ui.unban.button.submit_unban"), button -> {
             submitUnbanRequest();
         }).dimensions(this.width / 2 + 5, this.height - 60, 100, 20).build();
         unbanButton.active = false;
@@ -63,25 +64,25 @@ public class TryFishportUI extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 15, 0xFFFFFF);
         
         // 绘制IP地址信息
-        context.drawTextWithShadow(this.textRenderer, "您的 IP: " + ipAddress, 10, 50, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.ip").getString() + ipAddress, 10, 50, 0xFFFFFF);
         
         // 绘制状态信息
-        context.drawTextWithShadow(this.textRenderer, "状态: " + status, 10, 70, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.status").getString() + status, 10, 70, 0xFFFFFF);
         
         // 绘制封禁状态
         if (isBanned) {
-            context.drawTextWithShadow(this.textRenderer, "验证码: " + captcha, 10, 90, 0xFFFFFF);
+            context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.captcha").getString() + captcha, 10, 90, 0xFFFFFF);
         }
         
         // 绘制结果信息
-        if (!resultMessage.isEmpty()) {
-            context.drawTextWithShadow(this.textRenderer, resultMessage, 10, 110, 0xFFFFFF);
+        if (!Text.translatable(resultMessage).getString().isEmpty()) {
+            context.drawTextWithShadow(this.textRenderer, Text.translatable(resultMessage), 10, 110, 0xFFFFFF);
         }
     }
 
     private void getIPAddress() {
         // 避免重复执行IP获取
-        if (!ipAddress.equals("获取中...")) {
+        if (!ipAddress.equals(Text.translatable("tryfishport.ui.unban.ip.getting").getString())) {
             return;
         }
         
@@ -110,16 +111,20 @@ public class TryFishportUI extends Screen {
                     ipAcquired = true;
                 }
                 
+                // 更新状态文本为可翻译格式
+                status = Text.translatable(status).getString();
+                
                 // 如果所有外部服务都失败了，获取本地IP（作为最后的备选方案）
                 if (!ipAcquired) {
                     InetAddress localhost = InetAddress.getLocalHost();
                     ipAddress = localhost.getHostAddress();
-                    status = "本地地址 (可能不是公网IP)";
+                    status = Text.translatable("tryfishport.ui.unban.ip.local").getString();
                 }
                 
             } catch (Exception e) {
-                ipAddress = "获取失败";
-                status = "错误: " + e.getMessage();
+                ipAddress = Text.translatable("tryfishport.ui.unban.ip.failed").getString();
+                status = Text.translatable("tryfishport.ui.unban.status.error").getString();
+                resultMessage = "tryfishport.ui.unban.result.get_ip_failed";
                 e.printStackTrace();
             }
             
@@ -165,7 +170,7 @@ public class TryFishportUI extends Screen {
                 // 验证IP地址格式
                 if (isValidIPAddress(ip)) {
                     ipAddress = ip;
-                    status = "就绪";
+                    status = Text.translatable("tryfishport.ui.unban.status.ready").getString();
                     return true;
                 }
             }
@@ -207,7 +212,7 @@ public class TryFishportUI extends Screen {
         }
         
         isChecking = true;
-        status = "检查中...";
+        status = Text.translatable("tryfishport.ui.unban.status.checking").getString();
         resultMessage = "";
         refreshUI();
         
@@ -233,21 +238,21 @@ public class TryFishportUI extends Screen {
                     String responseText = response.toString().trim();
                     if (responseText.contains("banned") || responseText.contains("封禁")) {
                         isBanned = true;
-                        status = "已被封禁";
-                        resultMessage = "检测到IP被封禁，正在计算验证码...";
+                        status = Text.translatable("tryfishport.ui.unban.status.banned").getString();
+                        resultMessage = "tryfishport.ui.unban.captcha.calculating";
                         calculateCaptcha();
                     } else {
                         isBanned = false;
-                        status = "正常";
-                        resultMessage = "您的IP未被封禁";
+                        status = Text.translatable("tryfishport.ui.unban.status.normal").getString();
+                        resultMessage = "tryfishport.ui.unban.result.not_banned";
                     }
                 } else {
-                    status = "检查失败";
-                    resultMessage = "检查请求失败: HTTP " + responseCode;
+                    status = Text.translatable("tryfishport.ui.unban.status.check_failed").getString();
+                    resultMessage = "tryfishport.ui.unban.result.check_failed_code" + responseCode;
                 }
             } catch (Exception e) {
-                status = "检查失败";
-                resultMessage = "检查失败: " + e.getMessage();
+                status = Text.translatable("tryfishport.ui.unban.status.check_failed").getString();
+                resultMessage = "tryfishport.ui.unban.result.check_failed";
                 e.printStackTrace();
             } finally {
                 isChecking = false;
@@ -278,15 +283,25 @@ public class TryFishportUI extends Screen {
                     
                     // 解析验证码（实际实现可能需要根据具体API调整）
                     String captchaText = response.toString().trim();
-                    captcha = captchaText;
-                    resultMessage = "验证码计算完成";
+                    // 假设服务器返回的是纯数字验证码
+                    try {
+                        Integer.parseInt(captchaText);  // 验证是否为纯数字
+                        captcha = captchaText;
+                        resultMessage = "tryfishport.ui.unban.captcha.ready";
+                        status = Text.translatable("tryfishport.ui.unban.status.ready").getString();
+                    } catch (NumberFormatException e) {
+                        captcha = "";
+                        resultMessage = "tryfishport.ui.unban.result.captcha_invalid";
+                        status = Text.translatable("tryfishport.ui.unban.status.error").getString();
+                    }
                 } else {
-                    captcha = "计算失败";
-                    resultMessage = "验证码获取失败: HTTP " + responseCode;
+                    captcha = "";
+                    resultMessage = "tryfishport.ui.unban.result.captcha_fetch_failed";
                 }
             } catch (Exception e) {
-                captcha = "计算失败: " + e.getMessage();
-                resultMessage = "验证码计算失败: " + e.getMessage();
+                captcha = "";
+                resultMessage = "tryfishport.ui.unban.result.captcha_calc_failed";
+                status = Text.translatable("tryfishport.ui.unban.status.error").getString();
                 e.printStackTrace();
             } finally {
                 MinecraftClient.getInstance().execute(this::refreshUI);
@@ -296,12 +311,12 @@ public class TryFishportUI extends Screen {
 
     private void submitUnbanRequest() {
         if (captcha.isEmpty() || !isBanned) {
-            resultMessage = "无法提交解封请求：未被封禁或验证码未准备好";
+            resultMessage = "tryfishport.ui.unban.result.captcha_failed";
             refreshUI();
             return;
         }
 
-        resultMessage = "正在提交解封请求...";
+        resultMessage = "tryfishport.ui.unban.result.request_submitted";
         refreshUI();
         
         CompletableFuture.runAsync(() -> {
@@ -332,17 +347,18 @@ public class TryFishportUI extends Screen {
                     }
                     reader.close();
                     
-                    resultMessage = response.toString().trim();
+                    String responseText = response.toString().trim();
+                    resultMessage = "tryfishport.ui.unban.result.request_success";
                     // 解封成功后更新状态
-                    if (resultMessage.contains("success") || resultMessage.contains("成功")) {
+                    if (responseText.contains("success") || responseText.contains("成功")) {
                         isBanned = false;
-                        status = "已解封";
+                        status = Text.translatable("tryfishport.ui.unban.status.unbanned").getString();
                     }
                 } else {
-                    resultMessage = "解封请求失败: HTTP " + responseCode;
+                    resultMessage = "tryfishport.ui.unban.result.unban_failed_code" + responseCode;
                 }
             } catch (Exception e) {
-                resultMessage = "解封请求失败: " + e.getMessage();
+                resultMessage = "tryfishport.ui.unban.result.unban_failed";
                 e.printStackTrace();
             }
             
@@ -354,6 +370,16 @@ public class TryFishportUI extends Screen {
     private void refreshUI() {
         // 触发UI重绘
         this.init();
+        
+        // 更新解封按钮状态
+        this.children().forEach(element -> {
+            if (element instanceof ButtonWidget) {
+                ButtonWidget button = (ButtonWidget) element;
+                if (button.getMessage().getString().equals(Text.translatable("tryfishport.ui.unban.button.submit_unban").getString())) {
+                    button.active = isBanned && !captcha.isEmpty() && !Text.translatable("tryfishport.ui.unban.result.captcha_invalid").getString().equals(Text.translatable(resultMessage).getString());
+                }
+            }
+        });
     }
 
     @Override
