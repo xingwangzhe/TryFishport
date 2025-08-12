@@ -47,8 +47,8 @@ public class PingUI extends Screen {
 
         this.addDrawableChild(ButtonWidget.builder(Text.translatable("tryfishport.ui.ping.button.copy_result"), button -> {
             System.out.println(Text.translatable("tryfishport.log.button.copy").getString() + serverInfo.name);
-            System.out.println(Text.translatable("tryfishport.log.copying.result").getString() + Text.translatable(pingResult).getString());
-            MinecraftClient.getInstance().keyboard.setClipboard(Text.translatable(pingResult).getString());
+            System.out.println(Text.translatable("tryfishport.log.copying.result").getString() + pingResult);
+            MinecraftClient.getInstance().keyboard.setClipboard(pingResult);
         })
         .dimensions(this.width / 2 + 5, this.height - 30, 100, 20)
         .build());
@@ -288,7 +288,7 @@ public class PingUI extends Screen {
         context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.status").getString() + serverInfo.address, 10, 50, 0xFFFFFF);
         
         // 绘制结果信息 - 支持多行显示
-        String[] lines = Text.translatable(pingResult).toString().split("\n");
+        String[] lines = pingResult.split("\n");
         for (int i = 0; i < lines.length && i < 20; i++) { // 限制显示20行
             context.drawTextWithShadow(this.textRenderer, lines[i], 10, 70 + i * 10, 0xFFFFFF);
         }

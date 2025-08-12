@@ -1,43 +1,41 @@
 {
   "schemaVersion": 1,
   "id": "tryfishport",
-  "version": "1.0.0",
+  "version": "${version}",
   "name": "TryFishport",
-  "description": "A mod for Minecraft that provides various utilities.",
-  "authors": ["xingwangzhe"],
+  "description": "a client mod for Minecraft that adds a func to the Fishport server",
+  "authors": [
+    "王兴家 <xingwangzhe@outlook.com>"
+  ],
   "contact": {
-    "homepage": "https://example.com",
+    "homepage": "https://wiki.fishport.net",
     "sources": "https://github.com/xingwangzhe/TryFishport",
     "issues": "https://github.com/xingwangzhe/TryFishport/issues"
   },
   "license": "MIT",
-  "icon": "icon.png",  // 原来的图标文件
-  "environment": "client-and-server",
+  "icon": "assets/tryfishport/icon.png",
+  "environment": "client",
   "entrypoints": {
+    "fabric-datagen": [
+      "fun.xingwangzhe.tryfishport.client.TryfishportDataGenerator"
+    ],
+    "client": [
+      "fun.xingwangzhe.tryfishport.client.TryfishportClient"
+    ],
     "main": [
-      "fun.xingwangzhe.tryfishport.TryFishport"
+      "fun.xingwangzhe.tryfishport.Tryfishport"
     ]
   },
-  "depends": {
-    "minecraft": ">=1.21.4",
-    "fabricloader": ">=0.17.2",
-    "fabric-api": "*"
-  },
-  // 添加 modmenu 配置
-  "custom": {
-    "modmenu": {
-      "links": {
-        "modmenu.discord": "https://discord.gg/jEGF5fb"
-      },
-      "badges": [ "library", "deprecated" ],
-      "parent": {
-        "id": "example-api",
-        "name": "Example API",
-        "description": "Modular example library",
-        "icon": "assets/example-api-module-v1/parent_icon.png",
-        "badges": [ "library" ]
-      },
-      "update_checker": true
+  "mixins": [
+    "tryfishport.mixins.json",
+    {
+      "config": "tryfishport.client.mixins.json",
+      "environment": "client"
     }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
   }
 }
