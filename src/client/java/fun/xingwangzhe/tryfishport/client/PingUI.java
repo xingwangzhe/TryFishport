@@ -14,11 +14,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PingUI extends Screen {
     private final ServerInfo serverInfo;
-    private String pingResult = "正在获取路由信息...";
-    private boolean isPinging = false;
+    private volatile String pingResult = "正在获取路由信息...";
+    private final AtomicBoolean isPinging = new AtomicBoolean(false);
+    private final StringBuilder traceOutputBuffer = new StringBuilder();
 
     public PingUI(ServerInfo serverInfo) {
         super(Text.of("服务器路由追踪"));
@@ -54,64 +56,40 @@ public class PingUI extends Screen {
     }
 
     private void traceRoute() {
-        if (isPinging) {
+        if (isPinging.get()) {
             System.out.println("Already tracing route, ignoring request.");
             return;
         }
         
-        isPinging = true;
+        isPinging.set(true);
         pingResult = "正在获取路由信息...";
         System.out.println("Starting to trace route: " + serverInfo.address);
         System.out.println("ServerInfo details - Name: " + serverInfo.name + ", Address: " + serverInfo.address + ", Version: " + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
     
+        traceOutputBuffer.setLength(0); // 清空缓冲区
+        traceOutputBuffer.append("正在获取路由信息...\n");
+        updatePingResult();
+        System.out.println("Parsing server address: " + serverInfo.address);
+        
+        ServerAddress address = ServerAddress.parse(serverInfo.address);
+        String host = address.getAddress();
+        
+        System.out.println("Parsed address - Host: " + host);
+        
+        // 执行traceroute命令
+        System.out.println("Starting traceroute command execution");
         new Thread(() -> {
             try {
-                // 使用系统traceroute命令
-                pingResult = "正在执行路由追踪命令...";
-                System.out.println(pingResult);
-                System.out.println("Parsing server address: " + serverInfo.address);
-                
-                ServerAddress address = ServerAddress.parse(serverInfo.address);
-                String host = address.getAddress();
-                
-                System.out.println("Parsed address - Host: " + host);
-                
-                // 执行traceroute命令
-                System.out.println("Starting traceroute command execution");
-                String traceOutput = executeTraceRouteCommand(host);
-                System.out.println("Traceroute command completed");
-                
-                if (traceOutput == null || traceOutput.isEmpty()) {
-                    System.out.println("Traceroute command returned empty result");
-                    pingResult = "路由追踪命令执行失败或无响应";
-                } else {
-                    System.out.println("Traceroute command result: " + traceOutput);
-                    pingResult = "路由追踪结果:\n" + traceOutput;
-                }
-                
-                // 更新UI
-                MinecraftClient.getInstance().execute(() -> {
-                    System.out.println("Updating UI with result: " + pingResult);
-                });
+                executeTraceRouteCommand(host);
             } catch (Exception e) {
                 System.out.println("Exception in traceRoute: " + e.getMessage());
                 e.printStackTrace();
-                pingResult = "路由追踪错误: " + e.getMessage();
-                e.printStackTrace();
-                
-                // 更新UI显示错误
-                MinecraftClient.getInstance().execute(() -> {
-                    System.out.println("Updating UI with error: " + pingResult);
-                });
+                traceOutputBuffer.append("路由追踪错误: ").append(e.getMessage()).append("\n");
+                updatePingResult();
             } finally {
-                isPinging = false;
+                isPinging.set(false);
                 System.out.println("Finished tracing route: " + serverInfo.address);
                 System.out.println("ServerInfo details - Name: " + serverInfo.name + ", Address: " + serverInfo.address + ", Version: " + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
-                
-                // 确保UI更新
-                MinecraftClient.getInstance().execute(() -> {
-                    System.out.println("Ensuring UI update after completion");
-                });
             }
         }).start();
     }
@@ -122,7 +100,7 @@ public class PingUI extends Screen {
      * @param host 要traceroute的主机名或IP地址
      * @return 路由追踪命令的输出结果
      */
-    private String executeTraceRouteCommand(String host) {
+    private void executeTraceRouteCommand(String host) {
         try {
             String os = System.getProperty("os.name").toLowerCase();
             String[] command;
@@ -155,14 +133,14 @@ public class PingUI extends Screen {
                 Process process = Runtime.getRuntime().exec(command);
                 
                 // 读取命令输出
-                StringBuilder output = new StringBuilder();
                 java.io.BufferedReader reader = new java.io.BufferedReader(
                     new java.io.InputStreamReader(process.getInputStream()));
                 
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
+                    traceOutputBuffer.append(line).append("\n");
                     System.out.println("Route trace output line: " + line);
+                    updatePingResult(); // 实时更新结果
                 }
                 
                 // 读取错误输出
@@ -185,32 +163,49 @@ public class PingUI extends Screen {
                     if (errorStr.contains("not found") || errorStr.contains("not recognized") || 
                         errorStr.contains("No such file or directory".toLowerCase()) || 
                         errorStr.contains("command not found")) {
-                        return getCommandNotFoundMessage(friendlyName, os);
+                        traceOutputBuffer.append(getCommandNotFoundMessage(friendlyName, os));
+                    } else {
+                        traceOutputBuffer.append("\n错误信息:\n").append(errorOutput.toString());
                     }
-                    return output.toString() + "\n错误信息:\n" + errorOutput.toString();
                 }
                 
                 // 如果输出为空但退出码为0，可能是命令执行了但没有输出
-                if (output.length() == 0 && exitCode == 0) {
-                    return "路由追踪命令执行完成，但未返回任何输出";
+                if (traceOutputBuffer.length() == 0 && exitCode == 0) {
+                    traceOutputBuffer.append("路由追踪命令执行完成，但未返回任何输出");
                 }
                 
-                return output.toString();
+                updatePingResult(); // 最终更新结果
+                
             } catch (IOException e) {
                 System.out.println("IOException when executing command: " + e.getMessage());
                 // 如果命令不存在或无法执行
                 if (e.getMessage().contains("Cannot run program") || 
                     e.getMessage().contains("error=2") || 
                     e.getMessage().contains("No such file or directory")) {
-                    return getCommandNotFoundMessage(friendlyName, os);
+                    traceOutputBuffer.append(getCommandNotFoundMessage(friendlyName, os));
+                } else {
+                    traceOutputBuffer.append("执行路由追踪命令时出错: ").append(e.getMessage());
                 }
+                updatePingResult();
                 throw e; // 重新抛出其他IO异常
             }
         } catch (Exception e) {
             System.out.println("Exception in executeTraceRouteCommand: " + e.getMessage());
             e.printStackTrace();
-            return "执行路由追踪命令时出错: " + e.getMessage();
+            traceOutputBuffer.append("执行路由追踪命令时出错: ").append(e.getMessage()).append("\n");
+            updatePingResult();
         }
+    }
+
+    /**
+     * 更新界面显示结果
+     */
+    private void updatePingResult() {
+        // 在主线程中更新UI
+        MinecraftClient.getInstance().execute(() -> {
+            pingResult = traceOutputBuffer.toString();
+            System.out.println("Updating UI with current result");
+        });
     }
     
     /**
@@ -274,7 +269,7 @@ public class PingUI extends Screen {
         }
         
         // 添加调试信息
-        System.out.println("Render method called");
+//        System.out.println("Render method called");
     }
     
     @Override
