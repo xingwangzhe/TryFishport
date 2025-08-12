@@ -1,5 +1,6 @@
 package fun.xingwangzhe.tryfishport.mixin.client;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerServerListWidget;
@@ -17,6 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.HashMap;
 import java.util.Map;
 
+import fun.xingwangzhe.tryfishport.client.PingUI;
+
 @Mixin(MultiplayerServerListWidget.ServerEntry.class)
 public class ServerEntryMixin {
     @Unique
@@ -25,7 +28,6 @@ public class ServerEntryMixin {
     // 存储每个服务器条目的按钮
     @Unique
     private static final Map<MultiplayerServerListWidget.ServerEntry, ButtonWidget> entryButtons = new HashMap<>();
-
 
     @Inject(at = @At("TAIL"), method = "render(Lnet/minecraft/client/gui/DrawContext;IIIIIIIZF)V")
     private void onRender(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta, CallbackInfo info) {
@@ -36,9 +38,9 @@ public class ServerEntryMixin {
             // 获取或创建按钮
             ButtonWidget button = entryButtons.get(entry);
             if (button == null) {
-                button = ButtonWidget.builder(Text.of("ModBtn"), btn -> {
-                    // 按钮点击处理逻辑
-                    System.out.println("Custom button clicked for server: " + entry.getServer().name);
+                button = ButtonWidget.builder(Text.of("Ping"), btn -> {
+                    System.out.println("Ping button clicked!"); // 添加日志
+                    MinecraftClient.getInstance().setScreen(new PingUI(entry.getServer()));
                 }).dimensions(0, 0, 60, 20).build();
                 entryButtons.put(entry, button);
             }
