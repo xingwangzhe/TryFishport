@@ -103,3 +103,6 @@ publishing {
         // retrieving dependencies.
     }
 }
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << "-Xlint:deprecation"
+}
