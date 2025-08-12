@@ -4,7 +4,8 @@
   "package": "fun.xingwangzhe.tryfishport.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "MultiplayerScreenMixin"
+    "MultiplayerScreenMixin",
+    "ServerEntryMixin"
   ],
   "injectors": {
     "defaultRequire": 1
