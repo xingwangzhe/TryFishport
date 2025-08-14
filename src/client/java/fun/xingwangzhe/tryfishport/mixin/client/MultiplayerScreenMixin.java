@@ -18,15 +18,15 @@ public class MultiplayerScreenMixin extends Screen {
     }
 
     @Inject(at = @At("TAIL"), method = "init()V")
-    private void onInit(CallbackInfo ci) {
-        // 在服务器列表界面右上角附近添加自定义按钮
-        this.addDrawableChild(ButtonWidget
-            .builder(Text.translatable("tryfishport.button.tryfishport"), button -> {
-                System.out.println(Text.translatable("tryfishport.log.button.tryfishport.clicked").getString());
-                // 打开TryFishportUI界面
-                net.minecraft.client.MinecraftClient.getInstance().setScreen(new TryFishportUI(this));
-            })
-            .dimensions(this.width - 105, 5, 100, 20)
-            .build());
-    }
+   private void onInit(CallbackInfo ci) {
+       // 在服务器列表界面左下角添加自定义按钮
+       this.addDrawableChild(ButtonWidget
+           .builder(Text.translatable("tryfishport.button.tryfishport"), button -> {
+               System.out.println(Text.translatable("tryfishport.log.button.tryfishport.clicked").getString());
+               // 打开TryFishportUI界面
+               net.minecraft.client.MinecraftClient.getInstance().setScreen(new TryFishportUI(this));
+           })
+           .dimensions(5, this.height - 25, 100, 20)
+           .build());
+   }
 }

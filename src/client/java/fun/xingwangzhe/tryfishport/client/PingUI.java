@@ -8,12 +8,12 @@ import net.minecraft.text.Text;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.network.ServerAddress;
-import net.minecraft.util.Identifier;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.InitialDirContext;
 import java.io.IOException;
-import java.net.InetAddress;
+import java.util.Hashtable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PingUI extends Screen {
@@ -54,9 +54,7 @@ public class PingUI extends Screen {
         .build());
 
         // 添加关闭按钮
-        this.addDrawableChild(ButtonWidget.builder(Text.translatable("tryfishport.ui.ping.button.close"), button -> {
-            close();
-        })
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("tryfishport.ui.ping.button.close"), button -> close())
         .dimensions(this.width / 2 - 50, this.height - 60, 100, 20)
         .build());
 
@@ -88,6 +86,15 @@ public class PingUI extends Screen {
         
         isPinging.set(true);
         pingResult = "tryfishport.ui.ping.status.getting_route_info";
+
+        var serverHost = resolveToIp(serverInfo.address);
+
+        if (serverHost.contains(":")) {
+            // 如果地址包含端口号，分离出主机名和端口
+            String[] parts = serverHost.split(":");
+            serverHost = parts[0];
+        }
+
         System.out.println(Text.translatable("tryfishport.log.tracing.start").getString() + serverInfo.address);
         System.out.println(Text.translatable("tryfishport.log.serverinfo.details").getString() + serverInfo.name + Text.translatable("tryfishport.log.serverinfo.address").getString() + serverInfo.address + Text.translatable("tryfishport.log.serverinfo.version").getString() + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
     
@@ -103,9 +110,10 @@ public class PingUI extends Screen {
         
         // 执行traceroute命令
         System.out.println(Text.translatable("tryfishport.log.traceroute.start").getString());
+        String finalServerHost = serverHost;
         new Thread(() -> {
             try {
-                executeTraceRouteCommand(host);
+                executeTraceRouteCommand(String.valueOf(finalServerHost));
             } catch (Exception e) {
                 System.out.println(Text.translatable("tryfishport.log.exception.traceroute").getString() + e.getMessage());
                 e.printStackTrace();
@@ -123,7 +131,6 @@ public class PingUI extends Screen {
      * 根据操作系统执行相应的路由追踪命令
      * 
      * @param host 要traceroute的主机名或IP地址
-     * @return 路由追踪命令的输出结果
      */
     private void executeTraceRouteCommand(String host) {
         try {
@@ -136,7 +143,7 @@ public class PingUI extends Screen {
             // 根据操作系统选择合适的路由追踪命令
             if (os.contains("win")) {
                 // Windows系统: tracert host (系统自带)
-                command = new String[]{"cmd.exe", "/c", "tracert", host};
+                command = new String[]{"cmd.exe", "/c", "tracert", "-d", host};
                 friendlyName = "tracert";
                 System.out.println("Using Windows tracert command (built-in)");
             } else if (os.contains("mac") || os.contains("darwin")) {
@@ -182,7 +189,7 @@ public class PingUI extends Screen {
                 System.out.println("Route trace command exited with code: " + exitCode);
                 
                 // 如果有错误输出，也包含在结果中
-                if (errorOutput.length() > 0) {
+                if (!errorOutput.isEmpty()) {
                     // 检查是否是因为命令不存在导致的错误
                     String errorStr = errorOutput.toString().toLowerCase();
                     if (errorStr.contains("not found") || errorStr.contains("not recognized") || 
@@ -190,12 +197,12 @@ public class PingUI extends Screen {
                         errorStr.contains("command not found")) {
                         traceOutputBuffer.append(getCommandNotFoundMessage(friendlyName, os));
                     } else {
-                        traceOutputBuffer.append("\n").append(Text.translatable("tryfishport.ui.ping.system.error_info").getString()).append(errorOutput.toString());
+                        traceOutputBuffer.append("\n").append(Text.translatable("tryfishport.ui.ping.system.error_info").getString()).append(errorOutput);
                     }
                 }
                 
                 // 如果输出为空但退出码为0，可能是命令执行了但没有输出
-                if (traceOutputBuffer.length() == 0 && exitCode == 0) {
+                if (traceOutputBuffer.isEmpty() && exitCode == 0) {
                     traceOutputBuffer.append(Text.translatable("tryfishport.ui.ping.system.command.no_output").getString());
                 }
                 
@@ -295,5 +302,32 @@ public class PingUI extends Screen {
         
         // 添加调试信息
 //        System.out.println("Render method called");
+    }
+    public String resolveToIp(String host) {
+        try {
+            String targetHost = host;
+
+            // 尝试 SRV 查询
+            try {
+                Hashtable<String, String> env = new Hashtable<>();
+                env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+                env.put("java.naming.provider.url", "dns:");
+
+                Attributes attrs = new InitialDirContext(env)
+                        .getAttributes("_minecraft._tcp." + host, new String[]{"SRV"});
+                Attribute attr = attrs.get("SRV");
+
+                if (attr != null && attr.size() > 0) {
+                    String[] parts = attr.get(0).toString().split(" ", 4);
+                    targetHost = parts[3].endsWith(".") ? parts[3].substring(0, parts[3].length() - 1) : parts[3];
+                }
+            } catch (Exception ignored) {}
+
+            // 查 A/AAAA 记录
+            return targetHost;
+
+        } catch (Exception e) {
+            return host; // 出错返回原 host
+        }
     }
 }
