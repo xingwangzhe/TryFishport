@@ -209,7 +209,7 @@ public class TryFishportUI extends Screen {
 
                 if (ipv4Token != null && !ipv4Token.isEmpty()) {
                     // POST /check 提交 IPv4 token
-                    URL checkUrl = new URL("https://ip-unban.fishport.net/check");
+                    URL checkUrl = URI.create("https://ip-unban.fishport.net/check").toURL();
                     HttpURLConnection checkConn = (HttpURLConnection) checkUrl.openConnection();
                     checkConn.setRequestMethod("POST");
                     checkConn.setRequestProperty("Content-Type", "application/json");
@@ -301,7 +301,7 @@ public class TryFishportUI extends Screen {
     // 获取IPv4 token（JWS）
     private @Nullable String fetchIPv4Token() {
         try {
-            URL tokenUrl = new URL("https://ip.fishport.pp.ua/");
+            URL tokenUrl = URI.create("https://ip.fishport.pp.ua/").toURL();
             HttpURLConnection tokenConn = (HttpURLConnection) tokenUrl.openConnection();
             tokenConn.setRequestMethod("GET");
             tokenConn.setConnectTimeout(5000);
@@ -482,7 +482,7 @@ public class TryFishportUI extends Screen {
 
         CompletableFuture.runAsync(() -> {
             try {
-                URL url = new URL("https://ip-unban.fishport.net/unblock");
+                URL url = URI.create("https://ip-unban.fishport.net/unblock").toURL();
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setRequestProperty("Content-Type", "application/json");

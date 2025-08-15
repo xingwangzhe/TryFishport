@@ -9,11 +9,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.network.ServerAddress;
 
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.InitialDirContext;
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PingUI extends Screen {
@@ -87,7 +83,7 @@ public class PingUI extends Screen {
         isPinging.set(true);
         pingResult = "tryfishport.ui.ping.status.getting_route_info";
 
-        var serverHost = resolveToIp(serverInfo.address);
+        var serverHost = DNSResolver.resolveToIp(serverInfo.address);
 
         if (serverHost.contains(":")) {
             // 如果地址包含端口号，分离出主机名和端口
@@ -302,32 +298,5 @@ public class PingUI extends Screen {
         
         // 添加调试信息
 //        System.out.println("Render method called");
-    }
-    public String resolveToIp(String host) {
-        try {
-            String targetHost = host;
-
-            // 尝试 SRV 查询
-            try {
-                Hashtable<String, String> env = new Hashtable<>();
-                env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-                env.put("java.naming.provider.url", "dns:");
-
-                Attributes attrs = new InitialDirContext(env)
-                        .getAttributes("_minecraft._tcp." + host, new String[]{"SRV"});
-                Attribute attr = attrs.get("SRV");
-
-                if (attr != null && attr.size() > 0) {
-                    String[] parts = attr.get(0).toString().split(" ", 4);
-                    targetHost = parts[3].endsWith(".") ? parts[3].substring(0, parts[3].length() - 1) : parts[3];
-                }
-            } catch (Exception ignored) {}
-
-            // 查 A/AAAA 记录
-            return targetHost;
-
-        } catch (Exception e) {
-            return host; // 出错返回原 host
-        }
     }
 }
