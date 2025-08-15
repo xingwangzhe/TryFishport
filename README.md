@@ -52,6 +52,31 @@ TryFishport 提供以下功能：
 - Fabric Loader: 0.17.2
 - Java 版本: 21
 
+## 贡献者
+
+<!-- readme: contributors -start -->
+<table>
+	<tbody>
+		<tr>
+            <td align="center">
+                <a href="https://github.com/xingwangzhe">
+                    <img src="https://avatars.githubusercontent.com/u/162127610?v=4" width="100;" alt="xingwangzhe"/>
+                    <br />
+                    <sub><b>王兴家</b></sub>
+                </a>
+            </td>
+            <td align="center">
+                <a href="https://github.com/Kongchenglige">
+                    <img src="https://avatars.githubusercontent.com/u/35166074?v=4" width="100;" alt="Kongchenglige"/>
+                    <br />
+                    <sub><b>空城 離歌</b></sub>
+                </a>
+            </td>
+		</tr>
+	<tbody>
+</table>
+<!-- readme: contributors -end -->
+
 ## 许可证
 
 本项目基于 MIT 许可证发布，详情请参阅 [LICENSE.txt](./LICENSE.txt) 文件。
