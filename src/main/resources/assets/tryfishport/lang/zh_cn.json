@@ -61,6 +61,8 @@
   "tryfishport.ui.general.ip": "您的 IP: ",
   "tryfishport.ui.general.status": "状态: ",
   "tryfishport.ui.general.captcha": "验证码: ",
+  "tryfishport.ui.ping.server.name": "服务器名称: ",
+  "tryfishport.ui.ping.server.address": "服务器地址: ",
   
   "tryfishport.button.ping": "Ping",
   "tryfishport.button.tryfishport": "TryFishport",

@@ -61,6 +61,8 @@
   "tryfishport.ui.general.ip": "Your IP: ",
   "tryfishport.ui.general.status": "Status: ",
   "tryfishport.ui.general.captcha": "Captcha: ",
+  "tryfishport.ui.ping.server.name": "Server Name: ",
+  "tryfishport.ui.ping.server.address": "Server Address: ",
   
   "tryfishport.button.ping": "Ping",
   "tryfishport.button.tryfishport": "TryFishport",

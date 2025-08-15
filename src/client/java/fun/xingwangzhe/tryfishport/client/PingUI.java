@@ -295,8 +295,8 @@ public class PingUI extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 15, 0xFFFFFF);
         
         // 绘制服务器信息在左上角区域
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.ip").getString() + serverInfo.name, 10, 35, 0xFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.general.status").getString() + serverInfo.address, 10, 50, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.ping.server.name").getString() + serverInfo.name, 10, 35, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer, Text.translatable("tryfishport.ui.ping.server.address").getString() + serverInfo.address, 10, 50, 0xFFFFFF);
         
         // 绘制结果信息 - 支持多行显示
         String[] lines = pingResult.split("\n");
