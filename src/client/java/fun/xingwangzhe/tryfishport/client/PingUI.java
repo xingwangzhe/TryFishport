@@ -81,7 +81,7 @@ public class PingUI extends Screen {
         }
         
         isPinging.set(true);
-        pingResult = "tryfishport.ui.ping.status.getting_route_info";
+        pingResult = Text.translatable("tryfishport.ui.ping.status.getting_route_info").getString();
 
         var serverHost = DNSResolver.resolveToIp(serverInfo.address);
 
@@ -95,7 +95,7 @@ public class PingUI extends Screen {
         System.out.println(Text.translatable("tryfishport.log.serverinfo.details").getString() + serverInfo.name + Text.translatable("tryfishport.log.serverinfo.address").getString() + serverInfo.address + Text.translatable("tryfishport.log.serverinfo.version").getString() + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
     
         traceOutputBuffer.setLength(0); // 清空缓冲区
-        traceOutputBuffer.append("tryfishport.ui.ping.status.getting_route_info\n");
+        traceOutputBuffer.append(Text.translatable("tryfishport.ui.ping.status.getting_route_info").getString()).append("\n");
         updatePingResult();
         System.out.println(Text.translatable("tryfishport.log.parsing.address").getString() + serverInfo.address);
         
@@ -113,7 +113,7 @@ public class PingUI extends Screen {
             } catch (Exception e) {
                 System.out.println(Text.translatable("tryfishport.log.exception.traceroute").getString() + e.getMessage());
                 e.printStackTrace();
-                traceOutputBuffer.append("tryfishport.ui.ping.error.route_trace").append(e.getMessage()).append("\n");
+                traceOutputBuffer.append(Text.translatable("tryfishport.ui.ping.error.route_trace").getString()).append(e.getMessage()).append("\n");
                 updatePingResult();
             } finally {
                 isPinging.set(false);
