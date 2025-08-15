@@ -4,11 +4,17 @@ import net.minecraft.client.network.ServerAddress;
 import net.minecraft.text.Text;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class RouteTracer {
     private final StringBuilder traceOutputBuffer = new StringBuilder();
     private String serverInfoAddress;
     private String serverInfoName;
+    
+    // 创建专用的线程池用于traceroute操作
+    private static final ExecutorService traceExecutor = Executors.newFixedThreadPool(2);
 
     public RouteTracer(String serverInfoAddress, String serverInfoName) {
         this.serverInfoAddress = serverInfoAddress;
@@ -20,6 +26,10 @@ public class RouteTracer {
      *
      * @param host 要traceroute的主机名或IP地址
      */
+    public CompletableFuture<Void> executeTraceRouteCommandAsync(String host) {
+        return CompletableFuture.runAsync(() -> executeTraceRouteCommand(host), traceExecutor);
+    }
+    
     public void executeTraceRouteCommand(String host) {
         try {
             String os = System.getProperty("os.name").toLowerCase();
@@ -156,5 +166,10 @@ public class RouteTracer {
 
     public String getTraceOutput() {
         return traceOutputBuffer.toString();
+    }
+    
+    // 添加资源清理方法
+    public static void shutdown() {
+        traceExecutor.shutdown();
     }
 }

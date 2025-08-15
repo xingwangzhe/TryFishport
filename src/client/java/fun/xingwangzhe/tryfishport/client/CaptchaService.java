@@ -11,6 +11,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class CaptchaService {
     public static class CaptchaResult {
@@ -21,6 +24,11 @@ public class CaptchaService {
             this.captcha = captcha;
             this.captchaToken = captchaToken;
         }
+    
+    // 添加关闭方法以正确关闭线程池
+    public static void shutdown() {
+        executorService.shutdown();
+    }
         
         public String getCaptcha() {
             return captcha;
@@ -29,6 +37,21 @@ public class CaptchaService {
         public String getCaptchaToken() {
             return captchaToken;
         }
+    }
+    
+    // 创建一个固定大小的线程池，避免创建过多线程
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors()
+    );
+    
+    public CompletableFuture<CaptchaResult> calculateCaptchaAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return calculateCaptcha();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, executorService);
     }
     
     public CaptchaResult calculateCaptcha() throws Exception {
@@ -87,12 +110,13 @@ public class CaptchaService {
                 boolean[] found = {false};
                 java.util.concurrent.atomic.AtomicReference<String> result = new java.util.concurrent.atomic.AtomicReference<>("");
 
+                // 使用CompletableFuture和线程池替代直接创建线程
                 final int batchSize = 1000;
                 for (long batchStart = 0; batchStart < total && !found[0]; batchStart += batchSize) {
-                    List<Thread> tasks = new ArrayList<>();
+                    List<CompletableFuture<Void>> tasks = new ArrayList<>();
                     for (long i = batchStart; i < Math.min(batchStart + batchSize, total) && !found[0]; i++) {
                         long index = i;
-                        Thread task = new Thread(() -> {
+                        CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
                             StringBuilder suffix = new StringBuilder();
                             long num = index;
                             for (int p = 0; p < suffixLength; p++) {
@@ -100,19 +124,17 @@ public class CaptchaService {
                                 num /= letters.length();
                             }
                             String candidate = prefix + suffix;
-                            String hash = utilsSha256(candidate); // 你需要实现 utilsSha256(String) 方法，返回hash字符串
+                            String hash = utilsSha256(candidate);
                             if (hash.substring(0, matchLength).equals(target)) {
                                 result.set(suffix.toString());
                                 found[0] = true;
                             }
-                        });
+                        }, executorService);
                         tasks.add(task);
-                        task.start();
                         count++;
                     }
-                    for (Thread t : tasks) {
-                        try { t.join(); } catch (InterruptedException ignored) {}
-                    }
+                    // 等待批次完成
+                    CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
                 }
                 if (!found[0]) {
                     throw new NumberFormatException("Captcha calculation failed, no match found");

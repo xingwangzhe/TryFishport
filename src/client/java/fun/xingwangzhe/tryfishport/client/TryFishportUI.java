@@ -6,8 +6,13 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 import net.minecraft.client.MinecraftClient;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TryFishportUI extends Screen {
+    // 创建一个共享的线程池用于所有网络操作
+    private static final ExecutorService networkExecutor = Executors.newFixedThreadPool(4);
+    
     private final Screen parent;
     private String ipAddress = Text.translatable("tryfishport.ui.unban.ip.getting").getString();
     private String status = Text.translatable("tryfishport.ui.unban.status.checking").getString();
@@ -81,6 +86,7 @@ public class TryFishportUI extends Screen {
         if (!ipAddress.equals(Text.translatable("tryfishport.ui.unban.ip.getting").getString())) {
             return;
         }
+        
         CompletableFuture.runAsync(() -> {
             try {
                 ipService.fetchIPAddress();
@@ -103,7 +109,7 @@ public class TryFishportUI extends Screen {
             }
             // 更新UI
             MinecraftClient.getInstance().execute(this::refreshUI);
-        });
+        }, networkExecutor);
     }
 
     private void checkBanStatus() {
@@ -146,7 +152,7 @@ public class TryFishportUI extends Screen {
                 isChecking = false;
                 MinecraftClient.getInstance().execute(this::refreshUI);
             }
-        });
+        }, networkExecutor);
     }
 
     private void calculateCaptcha() {
@@ -157,23 +163,26 @@ public class TryFishportUI extends Screen {
             return;
         }
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                CaptchaService.CaptchaResult result = captchaService.calculateCaptcha();
+        // 使用新的异步方法
+        captchaService.calculateCaptchaAsync()
+            .thenAccept(result -> {
                 this.captcha = result.getCaptcha();
                 this.captchaToken = result.getCaptchaToken();
                 
                 resultMessage = Text.translatable("tryfishport.ui.unban.captcha.ready").getString();
                 status = Text.translatable("tryfishport.ui.unban.status.ready").getString();
-            } catch (Exception e) {
+                
+                MinecraftClient.getInstance().execute(this::refreshUI);
+            })
+            .exceptionally(throwable -> {
                 captcha = "";
                 resultMessage = Text.translatable("tryfishport.ui.unban.result.captcha_calc_failed").getString();
                 status = Text.translatable("tryfishport.ui.unban.status.error").getString();
-                e.printStackTrace();
-            } finally {
+                throwable.printStackTrace();
+                
                 MinecraftClient.getInstance().execute(this::refreshUI);
-            }
-        });
+                return null;
+            });
     }
 
     private void submitUnbanRequest() {
@@ -213,7 +222,7 @@ public class TryFishportUI extends Screen {
             }
             // 更新UI
             MinecraftClient.getInstance().execute(this::refreshUI);
-        });
+        }, networkExecutor);
     }
 
     private void refreshUI() {
@@ -238,5 +247,10 @@ public class TryFishportUI extends Screen {
     @Override
     public boolean shouldPause() {
         return false;
+    }
+    
+    // 添加资源清理方法
+    public static void shutdown() {
+        networkExecutor.shutdown();
     }
 }

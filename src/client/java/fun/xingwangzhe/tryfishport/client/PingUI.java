@@ -10,6 +10,9 @@ import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.network.ServerAddress;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PingUI extends Screen {
@@ -18,6 +21,9 @@ public class PingUI extends Screen {
     private volatile String pingResult = Text.translatable("tryfishport.ui.ping.status.getting_route_info").getString();
     private final AtomicBoolean isPinging = new AtomicBoolean(false);
     private final StringBuilder traceOutputBuffer = new StringBuilder();
+    
+    // 创建专用的线程池用于traceroute操作
+    private static final ExecutorService traceExecutor = Executors.newFixedThreadPool(2);
 
     public PingUI(MultiplayerScreen parent, ServerInfo serverInfo) {
         super(Text.translatable("tryfishport.ui.ping.title"));
@@ -107,7 +113,9 @@ public class PingUI extends Screen {
         // 执行traceroute命令
         System.out.println(Text.translatable("tryfishport.log.traceroute.start").getString());
         String finalServerHost = serverHost;
-        new Thread(() -> {
+        
+        // 使用线程池执行traceroute，避免阻塞
+        CompletableFuture.runAsync(() -> {
             try {
                 executeTraceRouteCommand(String.valueOf(finalServerHost));
             } catch (Exception e) {
@@ -120,7 +128,7 @@ public class PingUI extends Screen {
                 System.out.println(Text.translatable("tryfishport.log.traceroute.finish").getString() + serverInfo.address);
                 System.out.println(Text.translatable("tryfishport.log.serverinfo.details").getString() + serverInfo.name + Text.translatable("tryfishport.log.serverinfo.address").getString() + serverInfo.address + Text.translatable("tryfishport.log.serverinfo.version").getString() + (serverInfo.version != null ? serverInfo.version.getString() : "null"));
             }
-        }).start();
+        }, traceExecutor);
     }
 
     /**
@@ -298,5 +306,10 @@ public class PingUI extends Screen {
         
         // 添加调试信息
 //        System.out.println("Render method called");
+    }
+    
+    // 添加资源清理方法
+    public static void shutdown() {
+        traceExecutor.shutdown();
     }
 }
